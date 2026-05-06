@@ -1644,7 +1644,7 @@ function AddModal({ onClose, onSaved, crewMembers }: AddModalProps) {
   return (
     <ModalShell
       title="Добавить запись"
-      subtitle="Лётная книжка · ICAO/EASA FCL.050"
+      subtitle="Маршрутные полёты"
       onClose={onClose}
     >
       <ModalForm
@@ -1980,7 +1980,7 @@ export default function LogbookPage() {
       </tr>`).join("");
 
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"/>
-      <title>Лётная книжка</title>
+      <title>Маршрутные полеты</title>
       <style>
         body{font-family:'Courier New',monospace;font-size:11px;color:#000;margin:20px}
         h1{font-size:18px;margin-bottom:4px}
@@ -1990,7 +1990,7 @@ export default function LogbookPage() {
         tr:nth-child(even) td{background:#f8f8f8}
         tfoot td{background:#1a1a2e;color:#fff;font-weight:bold;padding:6px 8px}
       </style></head><body>
-      <h1>📒 Лётная книжка</h1>
+      <h1> Маршрутные полеты</h1>
       <p style="font-size:10px;color:#666">ICAO/EASA FCL.050 · ${new Date().toLocaleString("ru-RU")} · ${entries.length} записей</p>
       <table>
         <thead><tr>
@@ -2073,14 +2073,14 @@ export default function LogbookPage() {
                 fontSize: 20,
               }}
             >
-              📒
+              ✈
             </div>
             <div>
               <h1 style={{ fontSize: 22, fontWeight: 900, color: "#f1f5f9", margin: 0, letterSpacing: "-0.01em" }}>
-                Лётная книжка
+                Маршрутные полеты
               </h1>
               <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
-                Pilot Logbook · ICAO/EASA FCL.050 Format
+                Маршрутные полеты · ICAO/EASA FCL.050 Format
               </div>
             </div>
           </div>

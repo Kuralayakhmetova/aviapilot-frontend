@@ -5,13 +5,13 @@ import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Bell, Search, Wind, Eye, Thermometer, Gauge,
+  Bell,Wind, Eye, Thermometer, Gauge,
   ChevronDown, X, Wifi, AlertTriangle, Info,
-  CheckCircle, Clock, RefreshCw, LogOut, Sun, Moon, Languages,
+  CheckCircle, Clock, RefreshCw, LogOut, 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth, User } from "@/lib/auth-context";
-import { useTheme } from "@/lib/ThemeProvider";
+
 
 // ─────────────────────────────────────────────
 // DESIGN TOKENS (локальные — без CSS vars)
@@ -79,21 +79,23 @@ interface Notification {
 const PAGE_TITLES: Record<string, { title: string; sub: string }> = {
   "/dashboard":     { title: "Дашборд",       sub: "ОБЗОР СИСТЕМЫ" },
   "/flights":       { title: "Полёты",         sub: "УПРАВЛЕНИЕ РЕЙСАМИ" },
-  "/schedule":      { title: "Расписание",     sub: "ПЛАН ПОЛЁТОВ" },
+  "/schedule":      { title: "Хронометраж",     sub: "Всех полетов" },
   "/map":           { title: "Карта",          sub: "НАВИГАЦИЯ" },
   "/airports":      { title: "Аэропорты",      sub: "БАЗА АЭРОДРОМОВ" },
   "/routes":        { title: "Маршруты",       sub: "ПЛАНИРОВАНИЕ МАРШРУТОВ" },
   "/weather":       { title: "Погода",         sub: "METAR / TAF / SIGMET" },
   "/notam":         { title: "NOTAM",          sub: "ИЗВЕЩЕНИЯ ПИЛОТАМ" },
   "/crew":          { title: "Экипаж",         sub: "УПРАВЛЕНИЕ ПЕРСОНАЛОМ" },
-  "/logbook":       { title: "Логбук",         sub: "ЖУРНАЛ ПОЛЁТОВ" },
+  "/logbook":       { title: "Маршрутные полеты",         sub: "ЖУРНАЛ ПОЛЁТОВ" },
   "/licenses":      { title: "Лицензии",       sub: "СВИДЕТЕЛЬСТВА И ДОПУСКИ" },
-  "/utp":           { title: "УТП",            sub: "УЧЕБНО-ТРЕНИРОВОЧНЫЕ ПОЛЁТЫ" },
+  "/training-flights":           { title: "УТП",            sub: "УЧЕБНО-ТРЕНИРОВОЧНЫЕ ПОЛЁТЫ" },
   "/documents":     { title: "Документы",      sub: "АРХИВ ДОКУМЕНТАЦИИ" },
   "/finance":       { title: "Финансы",        sub: "ФИНАНСОВЫЙ УЧЁТ" },
   "/notifications": { title: "Уведомления",    sub: "ЦЕНТР УВЕДОМЛЕНИЙ" },
   "/settings":      { title: "Настройки",      sub: "ПАРАМЕТРЫ СИСТЕМЫ" },
+   "/training-graph": { title: "График натренированности", sub: "АНАЛИЗ ПОДГОТОВКИ" },
 };
+
 
 // ─────────────────────────────────────────────
 // MOCK DATA
@@ -647,23 +649,19 @@ function UserMenuPanel({
 export function TopBar() {
   const pathname        = usePathname();
   const { user, logout } = useAuth();
-  const { theme, setTheme } = useTheme();
+ 
 
   const [activeMetar,       setActiveMetar]       = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showUserMenu,      setShowUserMenu]       = useState(false);
-  const [showSearch,        setShowSearch]         = useState(false);
-  const [searchQuery,       setSearchQuery]        = useState("");
+ 
   const [notifications,     setNotifications]     = useState<Notification[]>(MOCK_NOTIFICATIONS);
-  const [lang,              setLang]              = useState<"RU" | "KZ" | "EN">("RU");
-  const [showLangMenu,      setShowLangMenu]       = useState(false);
+  
 
   const metarRef    = useRef<HTMLDivElement>(null);
   const notifRef    = useRef<HTMLDivElement>(null);
   const userMenuRef = useRef<HTMLDivElement>(null);
-  const searchRef   = useRef<HTMLInputElement>(null);
-  const langRef     = useRef<HTMLDivElement>(null);
-
+  
   const pageInfo    = PAGE_TITLES[pathname] ?? { title: "AviaPilot", sub: "PILOT MANAGEMENT SYSTEM" };
   const unreadCount = notifications.filter((n) => !n.read).length;
 
@@ -679,37 +677,19 @@ export function TopBar() {
       if (metarRef.current    && !metarRef.current.contains(e.target as Node))    setActiveMetar(null);
       if (notifRef.current    && !notifRef.current.contains(e.target as Node))    setShowNotifications(false);
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setShowUserMenu(false);
-      if (langRef.current     && !langRef.current.contains(e.target as Node))     setShowLangMenu(false);
+     
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Focus search
-  useEffect(() => {
-    if (showSearch) searchRef.current?.focus();
-  }, [showSearch]);
+
 
   const markRead = (id: string) =>
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n)),
     );
 
-  // ── Shared icon button styles ──────────────────────────────────
-  const iconBtnStyle: React.CSSProperties = {
-    background: C.bgInput,
-    border: `1px solid ${C.border}`,
-    color: C.textMuted,
-  };
-
-  const onEnterIconBtn = (e: React.MouseEvent<HTMLButtonElement>) => {
-    (e.currentTarget as HTMLElement).style.borderColor = C.borderFocus;
-    (e.currentTarget as HTMLElement).style.color = C.textPrimary;
-  };
-  const onLeaveIconBtn = (e: React.MouseEvent<HTMLButtonElement>) => {
-    (e.currentTarget as HTMLElement).style.borderColor = C.border;
-    (e.currentTarget as HTMLElement).style.color = C.textMuted;
-  };
 
   return (
     <header
@@ -722,18 +702,7 @@ export function TopBar() {
     >
       {/* ── LEFT ───────────────────────────────────────── */}
       <div className="flex items-center gap-3 flex-1 min-w-0">
-        {/* Theme toggle */}
-        <button
-          onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          aria-label="Переключить тему"
-          className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg
-                     transition-all duration-150"
-          style={iconBtnStyle}
-          onMouseEnter={onEnterIconBtn}
-          onMouseLeave={onLeaveIconBtn}
-        >
-          {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
-        </button>
+       
 
         {/* Page title */}
         <div className="min-w-0">
@@ -765,55 +734,7 @@ export function TopBar() {
       {/* ── RIGHT ──────────────────────────────────────── */}
       <div className="flex items-center gap-2 shrink-0">
 
-        {/* Search */}
-        <AnimatePresence mode="wait">
-          {showSearch ? (
-            <motion.div
-              key="search-open"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: 200, opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              className="relative overflow-hidden hidden sm:block"
-            >
-              <Search
-                size={13}
-                className="absolute left-2.5 top-1/2 -translate-y-1/2"
-                style={{ color: C.textMuted }}
-              />
-              <input
-                ref={searchRef}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Поиск..."
-                className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg outline-none"
-                style={{
-                  background: C.bgInput,
-                  border: `1px solid ${C.border}`,
-                  color: C.textPrimary,
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Escape") { setShowSearch(false); setSearchQuery(""); }
-                }}
-              />
-            </motion.div>
-          ) : (
-            <motion.button
-              key="search-closed"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowSearch(true)}
-              aria-label="Поиск"
-              className="hidden sm:flex w-8 h-8 items-center justify-center rounded-lg
-                         transition-all duration-150"
-              style={iconBtnStyle}
-              onMouseEnter={onEnterIconBtn}
-              onMouseLeave={onLeaveIconBtn}
-            >
-              <Search size={14} />
-            </motion.button>
-          )}
-        </AnimatePresence>
+     
 
         {/* METAR chips */}
         <div ref={metarRef} className="hidden md:flex items-center gap-1.5 relative">
@@ -919,61 +840,7 @@ export function TopBar() {
           </span>
         </div>
 
-        {/* Language switcher */}
-        <div ref={langRef} className="relative">
-          <button
-            onClick={() => setShowLangMenu((v) => !v)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg
-                       transition-all duration-150"
-            style={iconBtnStyle}
-            onMouseEnter={onEnterIconBtn}
-            onMouseLeave={onLeaveIconBtn}
-          >
-            <Languages size={12} />
-            <span className="text-xs font-mono font-semibold">{lang}</span>
-          </button>
-          <AnimatePresence>
-            {showLangMenu && (
-              <motion.div
-                initial={{ opacity: 0, y: -6, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -6, scale: 0.97 }}
-                transition={{ duration: 0.12 }}
-                className="absolute top-full mt-1 right-0 rounded-lg overflow-hidden z-50"
-                style={{
-                  background: "#111827",
-                  border: `1px solid ${C.border}`,
-                  minWidth: "80px",
-                }}
-              >
-                {(["RU", "KZ", "EN"] as const).map((l) => (
-                  <button
-                    key={l}
-                    onClick={() => { setLang(l); setShowLangMenu(false); }}
-                    className="w-full flex items-center gap-2 px-3 py-2
-                               text-xs font-mono font-semibold transition-colors duration-100"
-                    style={{
-                      color: lang === l ? C.blue : C.textMuted,
-                      background: lang === l ? C.blueAlpha : "transparent",
-                    }}
-                    onMouseEnter={(e) => {
-                      (e.currentTarget as HTMLElement).style.background = C.bgHover;
-                    }}
-                    onMouseLeave={(e) => {
-                      (e.currentTarget as HTMLElement).style.background =
-                        lang === l ? C.blueAlpha : "transparent";
-                    }}
-                  >
-                    {lang === l && (
-                      <span style={{ color: C.blue }}>✓</span>
-                    )}
-                    {l}
-                  </button>
-                ))}
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
+       
 
         {/* User menu */}
         <div ref={userMenuRef} className="relative">
