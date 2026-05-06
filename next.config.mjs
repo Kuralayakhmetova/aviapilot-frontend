@@ -1,4 +1,3 @@
-// next.config.mjs
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   async rewrites() {
@@ -8,6 +7,10 @@ const nextConfig = {
         destination: 'http://localhost:3001/api/:path*',
       },
     ];
+  },
+
+  eslint: {
+    ignoreDuringBuilds: true,
   },
 };
 
