@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  X, Plane, MapPin, Clock, Users,
+  X, Plane, MapPin, Clock,
   Fuel, FileText, ChevronRight, ChevronLeft,
   Check, AlertTriangle, Info,
 } from "lucide-react";
@@ -414,7 +414,7 @@ function StepContent({
             border: "1px solid rgba(6,182,212,0.2)",
           }}
         >
-          <Info size={13} style={{ color: "var(--cyan-primary)", marginTop: 1, shrink: 0 }} />
+          <Info size={13} style={{ color: "var(--cyan-primary)", marginTop: 1, flexShrink: 0 }} />
           <p className="text-xs" style={{ color: "var(--text-muted)" }}>
             Все времена указываются в{" "}
             <strong style={{ color: "var(--cyan-primary)" }}>UTC</strong>
