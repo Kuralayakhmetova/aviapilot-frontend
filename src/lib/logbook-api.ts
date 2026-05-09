@@ -24,7 +24,7 @@ async function refreshAccessToken(): Promise<boolean> {
   isRefreshing = true;
   refreshPromise = (async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/auth/refresh`, {
+      const res = await fetch(`${BASE_URL}/auth/refresh`, {
         method: "POST",
         credentials: "include",
       });
@@ -194,7 +194,7 @@ export interface CreateLogbookEntryPayload {
 // ─── API functions ────────────────────────────────────────────────────────────
 
 export async function apiGetLogbook(): Promise<LogbookEntryRaw[]> {
-  const res = await apiFetch("/api/logbook");
+  const res = await apiFetch("/logbook");
   const data = await handleResponse(res);
   if (Array.isArray(data)) return data;
   if (Array.isArray(data?.data)) return data.data;
@@ -206,7 +206,7 @@ export async function apiGetLogbook(): Promise<LogbookEntryRaw[]> {
 export async function apiCreateLogbookEntry(
   payload: CreateLogbookEntryPayload,
 ): Promise<LogbookEntryRaw> {
-  const res = await apiFetch("/api/logbook", {
+  const res = await apiFetch("/logbook", {
     method: "POST",
     body: JSON.stringify(payload),
   });
@@ -218,7 +218,7 @@ export async function apiUpdateLogbookEntry(
   id: string,
   payload: Partial<CreateLogbookEntryPayload>,
 ): Promise<LogbookEntryRaw> {
-  const res = await apiFetch(`/api/logbook/${id}`, {
+  const res = await apiFetch(`/logbook/${id}`, {
     method: "PATCH",
     body: JSON.stringify(payload),
   });
@@ -227,6 +227,6 @@ export async function apiUpdateLogbookEntry(
 }
 
 export async function apiDeleteLogbookEntry(id: string): Promise<void> {
-  const res = await apiFetch(`/api/logbook/${id}`, { method: "DELETE" });
+  const res = await apiFetch(`/logbook/${id}`, { method: "DELETE" });
   await handleResponse(res);
 }
