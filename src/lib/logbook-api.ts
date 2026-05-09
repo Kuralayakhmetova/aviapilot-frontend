@@ -1,4 +1,4 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001/api";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -160,12 +160,12 @@ export interface CreateLogbookEntryPayload {
   technicians?: string[];
   mechanics?: string[];
 
-    leftSeatCrewId?:  string;
+  leftSeatCrewId?:  string;
   rightSeatCrewId?: string;
   attendantIds?:    string[];
   engineerIds?:     string[];
   technicianIds?:   string[];
-  
+
   exerciseNumber?: string;
   maxAltitude?: number | null;
   minAltitude?: number | null;
