@@ -25,12 +25,32 @@ export type CrewPosition =
   | "FLIGHT_ATTENDANT";
 
 export type RANKS =
-  | "Лейтенант"
-  | "Старший лейтенант"
-  | "Капитан"
-  | "Майор"
-  | "Подполковник"
-  | "Полковник";
+  | "LIEUTENANT"
+  | "SENIOR_LIEUTENANT"
+  | "CAPTAIN"
+  | "MAJOR"
+  | "LIEUTENANT_COLONEL"
+  | "COLONEL"
+
+// Добавь этот маппинг
+export const RANK_LABELS: Record<string, string> = {
+  LIEUTENANT: "Лейтенант",
+  SENIOR_LIEUTENANT: "Старший лейтенант",
+  CAPTAIN: "Капитан",
+  MAJOR: "Майор",
+  LIEUTENANT_COLONEL: "Подполковник",
+  COLONEL: "Полковник",
+};
+
+// Обратный маппинг — русский → английский
+export const RANK_TO_ENUM: Record<string, string> = {
+  "Лейтенант": "LIEUTENANT",
+  "Старший лейтенант": "SENIOR_LIEUTENANT",
+  "Капитан": "CAPTAIN",
+  "Майор": "MAJOR",
+  "Подполковник": "LIEUTENANT_COLONEL",
+  "Полковник": "COLONEL",
+};
 
 export type CrewStatus = "active" | "inactive" | "on_leave";
 
@@ -221,13 +241,11 @@ function sanitizePayload(data: Partial<CrewMember>): Partial<CrewMember> {
     const value = data[key];
     if (value === undefined) continue;
     if (value === "") continue;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (result as any)[key] = value;
+    (result as Record<keyof CrewMember, CrewMember[keyof CrewMember]>)[key] = value;
   }
 
   return result;
 }
-
 // ─────────────────────────────────────────────
 // API FUNCTIONS
 // ─────────────────────────────────────────────

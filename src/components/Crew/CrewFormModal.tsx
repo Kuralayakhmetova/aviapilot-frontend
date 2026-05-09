@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { crewApi, CrewMember, CrewCategory } from '@/lib/crew-api';
+import { crewApi, CrewMember, CrewCategory, RANK_TO_ENUM, RANK_LABELS } from '@/lib/crew-api';
 import { extractApiError } from '@/lib/crew-api';
 import styles from './CrewFormModal.module.css';
 
@@ -21,7 +21,7 @@ const CATEGORIES: { value: CrewCategory; label: string }[] = [
   { value: 'FLIGHT_ATTENDANT', label: 'Бортпроводник' },
 ];
 
-const RANKS = [
+const RANKS_RU = [
   'Лейтенант',
   'Старший лейтенант',
   'Капитан',
@@ -30,7 +30,7 @@ const RANKS = [
   'Полковник',
 ] as const;
 
-type Rank = typeof RANKS[number] | '';
+type RankRu = typeof RANKS_RU[number] | '';
 
 interface FormState {
   firstName:        string;
@@ -40,7 +40,7 @@ interface FormState {
   phone:            string;
   position:         string;
   category:         CrewCategory;
-  rank:             Rank;
+  rank:             RankRu;
   isActive:         boolean;
   birthDate:        string;
   licenseExpiry:    string;
@@ -64,6 +64,12 @@ const initialForm: FormState = {
   acTypePrimary:    '',
 };
 
+// Конвертация английского enum → русское для формы
+function enumToRu(enumValue: string): RankRu {
+  const ruLabel = RANK_LABELS[enumValue];
+  return (RANKS_RU as readonly string[]).includes(ruLabel) ? (ruLabel as RankRu) : '';
+}
+
 export default function CrewFormModal({ member, onClose, onSaved }: Props) {
   const [form, setForm]       = useState<FormState>(initialForm);
   const [loading, setLoading] = useState(false);
@@ -81,14 +87,12 @@ export default function CrewFormModal({ member, onClose, onSaved }: Props) {
         phone:            member.phone            || '',
         position:         member.position         || '',
         category:         member.category         || 'COMMANDER',
-        rank:             (RANKS as readonly string[]).includes(member.rank || '')
-                            ? (member.rank as Rank)
-                            : '',
+        rank:             member.rank ? enumToRu(member.rank) : '',
         isActive:         member.isActive         ?? true,
         birthDate:        member.birthDate        || '',
-        licenseExpiry:    member.licenseExpiry     || '',
+        licenseExpiry:    member.licenseExpiry    || '',
         totalFlightHours: member.totalFlightHours || 0,
-        acTypePrimary:    member.acTypePrimary     || '',
+        acTypePrimary:    member.acTypePrimary    || '',
       });
     } else {
       setForm(initialForm);
@@ -140,12 +144,14 @@ export default function CrewFormModal({ member, onClose, onSaved }: Props) {
       if (form.email.trim())         payload.email         = form.email.trim();
       if (form.phone.trim())         payload.phone         = form.phone.trim();
       if (form.position.trim())      payload.position      = form.position.trim();
-      if (form.rank)                 payload.rank          = form.rank;
       if (form.birthDate)            payload.birthDate     = form.birthDate;
       if (form.licenseExpiry)        payload.licenseExpiry = form.licenseExpiry;
       if (form.acTypePrimary.trim()) payload.acTypePrimary = form.acTypePrimary.trim();
 
-      console.log('📤 Payload:', payload);
+      // Конвертируем русское звание → английский enum перед отправкой
+      if (form.rank) {
+        payload.rank = (RANK_TO_ENUM[form.rank] ?? form.rank) as CrewMember['rank'];
+      }
 
       if (isEdit && member) {
         await crewApi.update(member.id, payload);
@@ -158,19 +164,14 @@ export default function CrewFormModal({ member, onClose, onSaved }: Props) {
     } catch (error: unknown) {
       const msg = extractApiError(error);
       setErrors({ submit: msg });
-      console.error('❌ Submit error:', msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div
-      className={styles.overlay}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
+    <div className={styles.overlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className={styles.modal}>
-
         <div className={styles.header}>
           <h2 className={styles.title}>
             {isEdit ? '✏️ Редактировать сотрудника' : '+ Добавить сотрудника'}
@@ -179,214 +180,101 @@ export default function CrewFormModal({ member, onClose, onSaved }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          {errors.submit && <div className={styles.errorBanner}>{errors.submit}</div>}
 
-          {errors.submit && (
-            <div className={styles.errorBanner}>{errors.submit}</div>
-          )}
-
-          {/* ── Личные данные ── */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Личные данные</h3>
             <div className={styles.grid2}>
-
               <div className={styles.field}>
                 <label className={styles.label}>Фамилия *</label>
-                <input
-                  name="lastName"
-                  value={form.lastName}
-                  onChange={handleChange}
-                  className={`${styles.input} ${errors.lastName ? styles.inputError : ''}`}
-                  placeholder="Иванов"
-                />
-                {errors.lastName && (
-                  <span className={styles.error}>{errors.lastName}</span>
-                )}
+                <input name="lastName" value={form.lastName} onChange={handleChange}
+                  className={`${styles.input} ${errors.lastName ? styles.inputError : ''}`} placeholder="Иванов" />
+                {errors.lastName && <span className={styles.error}>{errors.lastName}</span>}
               </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>Имя *</label>
-                <input
-                  name="firstName"
-                  value={form.firstName}
-                  onChange={handleChange}
-                  className={`${styles.input} ${errors.firstName ? styles.inputError : ''}`}
-                  placeholder="Иван"
-                />
-                {errors.firstName && (
-                  <span className={styles.error}>{errors.firstName}</span>
-                )}
+                <input name="firstName" value={form.firstName} onChange={handleChange}
+                  className={`${styles.input} ${errors.firstName ? styles.inputError : ''}`} placeholder="Иван" />
+                {errors.firstName && <span className={styles.error}>{errors.firstName}</span>}
               </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>Отчество</label>
-                <input
-                  name="middleName"
-                  value={form.middleName}
-                  onChange={handleChange}
-                  className={styles.input}
-                  placeholder="Иванович"
-                />
+                <input name="middleName" value={form.middleName} onChange={handleChange}
+                  className={styles.input} placeholder="Иванович" />
               </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>Email *</label>
-                <input
-                  name="email"
-                  type="email"
-                  value={form.email}
-                  onChange={handleChange}
-                  className={`${styles.input} ${errors.email ? styles.inputError : ''}`}
-                  placeholder="example@mail.com"
-                />
-                {errors.email && (
-                  <span className={styles.error}>{errors.email}</span>
-                )}
+                <input name="email" type="email" value={form.email} onChange={handleChange}
+                  className={`${styles.input} ${errors.email ? styles.inputError : ''}`} placeholder="example@mail.com" />
+                {errors.email && <span className={styles.error}>{errors.email}</span>}
               </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>Телефон</label>
-                <input
-                  name="phone"
-                  value={form.phone}
-                  onChange={handleChange}
-                  className={styles.input}
-                  placeholder="+7 (777) 000-00-00"
-                />
+                <input name="phone" value={form.phone} onChange={handleChange}
+                  className={styles.input} placeholder="+7 (777) 000-00-00" />
               </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>Дата рождения</label>
-                <input
-                  name="birthDate"
-                  type="date"
-                  value={form.birthDate}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
+                <input name="birthDate" type="date" value={form.birthDate} onChange={handleChange} className={styles.input} />
               </div>
-
             </div>
           </div>
 
-          {/* ── Профессиональные данные ── */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Профессиональные данные</h3>
             <div className={styles.grid2}>
-
               <div className={styles.field}>
                 <label className={styles.label}>Категория *</label>
-                <select
-                  name="category"
-                  value={form.category}
-                  onChange={handleChange}
-                  className={`${styles.select} ${errors.category ? styles.inputError : ''}`}
-                >
-                  {CATEGORIES.map(c => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
+                <select name="category" value={form.category} onChange={handleChange}
+                  className={`${styles.select} ${errors.category ? styles.inputError : ''}`}>
+                  {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
-                {errors.category && (
-                  <span className={styles.error}>{errors.category}</span>
-                )}
+                {errors.category && <span className={styles.error}>{errors.category}</span>}
               </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>Должность</label>
-                <input
-                  name="position"
-                  value={form.position}
-                  onChange={handleChange}
-                  className={styles.input}
-                  placeholder="Командир экипажа"
-                />
+                <input name="position" value={form.position} onChange={handleChange}
+                  className={styles.input} placeholder="Командир экипажа" />
               </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>Воинское звание</label>
-                <select
-                  name="rank"
-                  value={form.rank}
-                  onChange={handleChange}
-                  className={styles.select}
-                >
+                <select name="rank" value={form.rank} onChange={handleChange} className={styles.select}>
                   <option value="">— Не указано —</option>
-                  {RANKS.map(r => (
-                    <option key={r} value={r}>{r}</option>
-                  ))}
+                  {RANKS_RU.map(r => <option key={r} value={r}>{r}</option>)}
                 </select>
               </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>Статус</label>
-                <select
-                  name="isActive"
-                  value={form.isActive ? 'true' : 'false'}
-                  onChange={(e) =>
-                    setForm(prev => ({ ...prev, isActive: e.target.value === 'true' }))
-                  }
-                  className={styles.select}
-                >
+                <select name="isActive" value={form.isActive ? 'true' : 'false'}
+                  onChange={(e) => setForm(prev => ({ ...prev, isActive: e.target.value === 'true' }))}
+                  className={styles.select}>
                   <option value="true">Активен</option>
                   <option value="false">Неактивен</option>
                 </select>
               </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>Срок действия лицензии</label>
-                <input
-                  name="licenseExpiry"
-                  type="date"
-                  value={form.licenseExpiry}
-                  onChange={handleChange}
-                  className={styles.input}
-                />
+                <input name="licenseExpiry" type="date" value={form.licenseExpiry} onChange={handleChange} className={styles.input} />
               </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>Общий налёт (часов)</label>
-                <input
-                  name="totalFlightHours"
-                  type="number"
-                  min="0"
-                  value={form.totalFlightHours}
-                  onChange={handleChange}
-                  className={styles.input}
-                  placeholder="0"
-                />
+                <input name="totalFlightHours" type="number" min="0" value={form.totalFlightHours}
+                  onChange={handleChange} className={styles.input} placeholder="0" />
               </div>
-
               <div className={styles.field}>
                 <label className={styles.label}>Основной тип ВС</label>
-                <input
-                  name="acTypePrimary"
-                  value={form.acTypePrimary}
-                  onChange={handleChange}
-                  className={styles.input}
-                  placeholder="Boeing 737, Airbus A320..."
-                />
+                <input name="acTypePrimary" value={form.acTypePrimary} onChange={handleChange}
+                  className={styles.input} placeholder="Boeing 737, Airbus A320..." />
               </div>
-
             </div>
           </div>
 
           <div className={styles.footer}>
-            <button
-              type="button"
-              onClick={onClose}
-              className={styles.cancelBtn}
-              disabled={loading}
-            >
-              Отмена
-            </button>
-            <button
-              type="submit"
-              className={styles.saveBtn}
-              disabled={loading}
-            >
+            <button type="button" onClick={onClose} className={styles.cancelBtn} disabled={loading}>Отмена</button>
+            <button type="submit" className={styles.saveBtn} disabled={loading}>
               {loading ? '⟳ Сохранение...' : isEdit ? '✓ Сохранить' : '+ Добавить'}
             </button>
           </div>
-
         </form>
       </div>
     </div>
